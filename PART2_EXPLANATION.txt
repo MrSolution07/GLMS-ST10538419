@@ -364,30 +364,6 @@ Individual test file:
   dotnet test --filter "FullyQualifiedName~FactoryPatternTests"
 
 
---------------------------------------------------------------------------------
-11. SUBMISSION CHECKLIST
---------------------------------------------------------------------------------
 
-  [x]  ASP.NET Core MVC prototype (GLMS.Web project)
-  [x]  SQL Server database with EF Core Code-First migrations
-  [x]  Three entities: Client, Contract, ServiceRequest
-  [x]  One-to-many relationships with Fluent API configuration
-  [x]  Factory Method pattern implemented (3 factories + resolver)
-  [x]  Observer pattern implemented (2 concrete observers)
-  [x]  Strategy pattern implemented (2 validation strategies)
-  [x]  Status workflow: Expired/OnHold/Draft contracts block service requests
-  [x]  LINQ search/filter on Contracts by title, status, date range
-  [x]  PDF file upload — UUID naming, server storage, download link
-  [x]  File validation — extension check (.pdf only), size limit (10 MB)
-  [x]  External currency API integration (open.er-api.com, async/await)
-  [x]  USD to ZAR conversion persisted with exchange rate audit trail
-  [x]  Real-time ZAR calculator in service request form (JavaScript)
-  [x]  xUnit test project with 41 tests (all passing)
-  [x]  Tests cover: currency math, file validation, workflow rules, factory logic
-  [x]  Edge cases and boundary conditions covered (null, zero, negative, 10 MB)
-  [x]  Database migration scripts present
-  [x]  GitHub repository submission (see video walkthrough)
 
-================================================================================
-End of Part 2 Explanation Document
-================================================================================
+
