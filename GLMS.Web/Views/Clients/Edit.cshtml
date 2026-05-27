@@ -1,0 +1,73 @@
+@model Client
+@{
+    ViewData["Title"] = "Edit Client";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <a asp-action="Index" class="back-btn" title="Back to Clients">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="page-title">Edit Client</h1>
+            <p class="page-subtitle">@Model.Name</p>
+        </div>
+    </div>
+</div>
+
+<div class="glms-card form-section">
+    <div class="glms-card-header">
+        <span class="glms-card-title">Client Details</span>
+    </div>
+    <div class="glms-card-body">
+        <form asp-action="Edit" method="post">
+            <input asp-for="Id" type="hidden" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert-glms alert-glms-danger">
+                    <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;"></i>
+                    <div>
+                        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@err.ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label-glms">Client Name</label>
+                <input asp-for="Name" class="form-control-glms" />
+                <span asp-validation-for="Name" class="field-error"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ContactEmail" class="form-label-glms">Contact Email</label>
+                <input asp-for="ContactEmail" class="form-control-glms" type="email" />
+                <span asp-validation-for="ContactEmail" class="field-error"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ContactPhone" class="form-label-glms">Phone (optional)</label>
+                <input asp-for="ContactPhone" class="form-control-glms" />
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Region" class="form-label-glms">Region</label>
+                <input asp-for="Region" class="form-control-glms" />
+                <span asp-validation-for="Region" class="field-error"></span>
+            </div>
+
+            <hr class="divider" />
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-primary-glms">Save Changes</button>
+                <a asp-action="Index" class="btn-secondary-glms">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

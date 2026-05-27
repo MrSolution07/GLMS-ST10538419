@@ -1,0 +1,393 @@
+================================================================================
+GLOBAL LOGISTICS MANAGEMENT SYSTEM (GLMS)
+POE Part 2 — Core Prototype & Unit Testing
+Enterprise Application Development (EAPD7111/w) | PROG7311
+================================================================================
+Student:  Christian Emungu Bulabula
+Number:   ST10538419
+Date:     May 2026
+================================================================================
+
+
+TABLE OF CONTENTS
+-----------------
+1.  Overview and Objective
+2.  Solution Architecture
+3.  Database Design and Entity Framework Core
+4.  Design Pattern Implementation (from Part 1)
+5.  Workflow and Validation Logic
+6.  File Handling
+7.  External API Integration — Currency Conversion
+8.  Unit Testing — Coverage and Quality
+9.  Running the Application
+10. Running the Tests
+11. Submission Checklist
+
+
+--------------------------------------------------------------------------------
+1. OVERVIEW AND OBJECTIVE
+--------------------------------------------------------------------------------
+
+Part 2 builds on the architectural blueprint produced in Part 1. The goal is to
+deliver a functional ASP.NET Core MVC monolith that:
+
+  - Stores and manages logistics data in a SQL Server database via Entity
+    Framework Core (code-first with migrations).
+  - Enforces the business rule that service requests may only be raised against
+    Active contracts.
+  - Allows PDF signed agreements to be uploaded and downloaded securely.
+  - Converts international USD amounts to ZAR in real time using an external
+    currency exchange API (ExchangeRate-API.com).
+  - Proves the correctness of its core logic through an automated xUnit test
+    suite containing 41 tests, all of which pass green.
+
+The design patterns selected in Part 1 (Factory Method, Observer, Strategy) are
+fully implemented in code, not just described. Their presence can be verified by
+the lecturer directly in the source files under GLMS.Web/Services/.
+
+
+--------------------------------------------------------------------------------
+2. SOLUTION ARCHITECTURE
+--------------------------------------------------------------------------------
+
+Solution:  GLMS.sln
+  |
+  +-- GLMS.Web/           ASP.NET Core MVC 10 — the monolith prototype
+  |     Models/           Domain entities: Client, Contract, ServiceRequest
+  |     Data/             ApplicationDbContext (EF Core, Fluent API config)
+  |     Migrations/       Code-first migration scripts (InitialCreate)
+  |     Services/
+  |       Factories/      Factory Method pattern (3 concrete factories)
+  |       Observers/      Observer pattern (Audit + Email observers)
+  |       Strategies/     Strategy pattern (validation algorithms)
+  |       CurrencyService HttpClient-based async currency conversion
+  |       FileService     PDF upload / download service
+  |     ViewModels/       Strongly-typed form/display models
+  |     Controllers/      ClientsController, ContractsController,
+  |                       ServiceRequestsController, HomeController
+  |     Views/            Bootstrap 5 — custom CSS design system
+  |
+  +-- GLMS.Tests/         xUnit test project
+        CurrencyServiceTests.cs     (12 tests)
+        FileValidationTests.cs      (12 tests)
+        ContractWorkflowTests.cs    (10 tests)
+        FactoryPatternTests.cs      (7 tests)
+
+
+--------------------------------------------------------------------------------
+3. DATABASE DESIGN AND ENTITY FRAMEWORK CORE
+--------------------------------------------------------------------------------
+
+Three entities are defined in GLMS.Web/Models/:
+
+  Client
+    Id               INT PK
+    Name             NVARCHAR(150)  NOT NULL
+    ContactEmail     NVARCHAR(200)  NOT NULL  UNIQUE
+    ContactPhone     NVARCHAR(...)  NULLABLE
+    Region           NVARCHAR(100)  NOT NULL
+    RegisteredOn     DATETIME
+
+  Contract
+    Id               INT PK
+    ClientId         INT FK -> Client (RESTRICT on delete)
+    Title            NVARCHAR(200)  NOT NULL
+    StartDate        DATETIME
+    EndDate          DATETIME
+    Status           NVARCHAR(20)   (Draft | Active | Expired | OnHold)
+    ServiceLevel     NVARCHAR(20)   (Standard | Premium | Enterprise)
+    SignedAgreementPath     NVARCHAR nullable — server file path
+    SignedAgreementFileName NVARCHAR nullable — original display name
+    CreatedOn        DATETIME
+
+  ServiceRequest
+    Id               INT PK
+    ContractId       INT FK -> Contract (CASCADE on delete)
+    Description      NVARCHAR(1000) NOT NULL
+    CostUsd          DECIMAL(18,2)
+    CostZar          DECIMAL(18,2)  — persisted at time of creation
+    ExchangeRateUsed DECIMAL(18,4)  — rate stored for audit trail
+    Status           NVARCHAR(20)
+    RaisedOn         DATETIME
+
+Relationships:
+  Client 1 ---< Contract   (one client owns many contracts)
+  Contract 1 ---< ServiceRequest  (one contract has many requests)
+
+Configuration uses the Fluent API in ApplicationDbContext.OnModelCreating().
+Enum values are stored as strings (HasConversion<string>()) for readability.
+A unique index is applied to Client.ContactEmail.
+
+Migration:
+  File: GLMS.Web/Migrations/20260527194146_InitialCreate.cs
+  Command to apply manually (if not using auto-migrate):
+    cd GLMS.Web && dotnet ef database update
+
+Connection string (appsettings.json):
+  "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=GLMS_DB;..."
+
+
+--------------------------------------------------------------------------------
+4. DESIGN PATTERN IMPLEMENTATION (FROM PART 1)
+--------------------------------------------------------------------------------
+
+All three GoF patterns identified in the Part 1 UML are implemented in code.
+
+-- 4.1 Factory Method --
+Files:  Services/Factories/IContractFactory.cs
+        Services/Factories/StandardContractFactory.cs
+        Services/Factories/PremiumContractFactory.cs
+        Services/Factories/EnterpriseContractFactory.cs
+        Services/Factories/ContractFactoryResolver.cs
+
+Each concrete factory implements IContractFactory.CreateContract(...) and returns
+a Contract pre-configured for its ServiceLevel. The ContractFactoryResolver is
+injected into ContractsController and dispatches to the correct factory at
+runtime based on the ServiceLevel the user selects in the form.
+
+This decouples contract-creation logic from the controller. Adding a new service
+tier (e.g. "Government") requires only a new factory class, with zero changes to
+the controller.
+
+-- 4.2 Observer Pattern --
+Files:  Services/Observers/IContractObserver.cs
+        Services/Observers/AuditLogObserver.cs
+        Services/Observers/EmailNotificationObserver.cs
+
+When a contract's status changes (via Edit or the quick Update Status button),
+ContractsController iterates over all registered IContractObserver instances and
+calls OnStatusChangedAsync(...) on each one.
+
+  - AuditLogObserver: writes a structured log entry via ILogger.
+  - EmailNotificationObserver: simulates sending an email notification when a
+    contract becomes Active or Expired. In production, this would call SendGrid
+    or Azure Communication Services.
+
+Both observers are registered in Program.cs using AddTransient<IContractObserver>
+and are resolved as IEnumerable<IContractObserver> in the controller constructor.
+
+-- 4.3 Strategy Pattern --
+Files:  Services/Strategies/IValidationStrategy.cs
+        Services/Strategies/ServiceRequestValidationStrategy.cs
+        Services/Strategies/FileValidationStrategy.cs
+
+ServiceRequestValidationStrategy encapsulates the business rule: a service
+request may only be raised against an Active contract. The strategy also rejects
+zero or negative amounts.
+
+FileValidationStrategy encapsulates file upload rules: only .pdf extension is
+permitted, file size must not exceed 10 MB, and null/empty files are rejected.
+
+Both strategies are injected into the relevant controllers and called before any
+database write, keeping validation out of the controller body.
+
+
+--------------------------------------------------------------------------------
+5. WORKFLOW AND VALIDATION LOGIC
+--------------------------------------------------------------------------------
+
+Business Rule: A ServiceRequest cannot be created if the parent Contract
+status is Expired, OnHold, or Draft.
+
+This is enforced in two layers:
+
+  a) Service layer (primary): ServiceRequestValidationStrategy.Validate()
+     called in ServiceRequestsController.Create() before any DB insert.
+     Returns a ValidationResult with a descriptive error message.
+
+  b) UI layer (secondary): The "Raise Request" button on the Contracts/Details
+     page is conditionally rendered only when Status == Active.
+
+  c) Dropdown filter: The contract dropdown on the Service Request creation form
+     is populated only with Active contracts (via LINQ Where clause).
+
+LINQ Search / Filter (Contracts/Index):
+  Admins can filter by:
+    - Title keyword (Contains search, case-insensitive on SQL Server)
+    - Status (exact match)
+    - Start date range (from/to)
+  The query is built with IQueryable<Contract> and conditions are appended
+  only when the user provides values, avoiding unnecessary filters.
+
+
+--------------------------------------------------------------------------------
+6. FILE HANDLING
+--------------------------------------------------------------------------------
+
+File: Services/FileService.cs
+
+When a signed agreement is uploaded:
+  1. FileValidationStrategy validates extension (.pdf) and size (<= 10 MB).
+  2. A UUID (Guid.NewGuid()) filename is generated to prevent overwrites and
+     path traversal attacks.
+  3. The file is saved to wwwroot/uploads/<uuid>.pdf on the server.
+  4. The relative path and original filename are stored in the Contract record.
+
+Download:
+  ContractsController.DownloadAgreement() reads the file from disk and returns
+  it as a FileContentResult with Content-Type application/pdf and the original
+  filename as the download name.
+
+When a contract is deleted, FileService.DeleteFile() removes the PDF from disk.
+
+
+--------------------------------------------------------------------------------
+7. EXTERNAL API INTEGRATION — CURRENCY CONVERSION
+--------------------------------------------------------------------------------
+
+File: Services/CurrencyService.cs
+
+TechMove operates in multiple currencies but reports in ZAR. On the Service
+Request creation page, the current USD-to-ZAR exchange rate is fetched from
+the free open.er-api.com API:
+
+  GET https://open.er-api.com/v6/latest/USD
+
+The response is deserialized with System.Text.Json and the "ZAR" rate is
+extracted from the "rates" object.
+
+Key implementation details:
+  - Fully async: Task<decimal> GetUsdToZarRateAsync() uses await on HttpClient.
+  - Resilience: a try/catch wraps the API call. If the API is unavailable, a
+    sensible fallback rate (18.50) is used and a warning is logged.
+  - No .Result blocking: the async all-the-way pattern is maintained.
+  - The rate used is stored in ServiceRequest.ExchangeRateUsed for the audit
+    trail — a client cannot dispute the rate that was applied.
+
+UI behaviour:
+  The Service Request Create form has a live JavaScript recalculator: as the
+  user types a USD amount, the ZAR equivalent updates in real time using the
+  rate embedded in the page at load time. The ZAR amount and rate are submitted
+  as hidden fields and persisted to the database.
+
+
+--------------------------------------------------------------------------------
+8. UNIT TESTING — COVERAGE AND QUALITY
+--------------------------------------------------------------------------------
+
+Test project:  GLMS.Tests (xUnit 2.9, Moq 4.20)
+Result:        41 / 41 tests PASSED
+
+-- CurrencyServiceTests (12 tests) --
+  Tests the ConvertUsdToZar() method in isolation with a known, controlled rate.
+  Covers:
+    - Correct multiplication (100 USD * 18.50 = 1850.00 ZAR)
+    - Rounding to two decimal places
+    - Zero USD input
+    - Large amounts (50,000 USD)
+    - Negative USD input (ArgumentOutOfRangeException expected)
+    - Zero rate (ArgumentOutOfRangeException expected)
+    - Negative rate (ArgumentOutOfRangeException expected)
+    - [Theory] parameterised data across five amounts
+
+-- FileValidationTests (12 tests) --
+  Tests FileValidationStrategy with mocked IFormFile objects.
+  Covers:
+    - Valid .pdf file passes
+    - .exe file is rejected (error message contains ".exe")
+    - .docx file is rejected
+    - .jpg file is rejected
+    - Null file is rejected
+    - Zero-byte file is rejected
+    - File exceeding 10 MB is rejected (error message contains "MB")
+    - File exactly at 10 MB limit passes (boundary condition)
+    - [Theory] five additional disallowed extensions
+
+-- ContractWorkflowTests (10 tests) --
+  Tests ServiceRequestValidationStrategy against all contract states.
+  Covers:
+    - Active contract allows the request (happy path)
+    - Expired contract blocks and error mentions "expired"
+    - OnHold contract blocks and error mentions "hold"
+    - Draft contract blocks and error mentions "Draft"
+    - Zero-cost request is rejected even on Active contract
+    - Negative-cost request is rejected
+    - [Theory] all three non-Active statuses block in a single parameterised test
+
+-- FactoryPatternTests (7 tests) --
+  Tests the Factory Method pattern implementation.
+  Covers:
+    - Standard factory sets ServiceLevel.Standard
+    - Premium factory prefixes title with "[PREMIUM]"
+    - Enterprise factory prefixes title with "[ENTERPRISE]"
+    - All factories produce Draft status by default
+    - Resolver throws InvalidOperationException for unregistered level
+    - Factory correctly assigns provided ClientId
+    - All levels produce Draft in a single loop
+
+TDD Principles applied:
+  - Each test has a single assertion concern.
+  - Edge cases (null, zero, negative, exact boundaries) are covered.
+  - Factories are tested for their contract, not their internals.
+  - No test depends on external services or databases (pure unit tests).
+
+
+--------------------------------------------------------------------------------
+9. RUNNING THE APPLICATION
+--------------------------------------------------------------------------------
+
+Prerequisites:
+  - .NET 10 SDK
+  - SQL Server (LocalDB is sufficient for development)
+
+Steps:
+  1. Open GLMS.sln in Visual Studio 2022 or later.
+  2. Set GLMS.Web as the startup project.
+  3. Press F5 or run:
+       cd GLMS.Web
+       dotnet run
+  4. The application auto-applies migrations on startup. The GLMS_DB database
+     is created automatically in LocalDB if it does not exist.
+  5. Navigate to https://localhost:<port>
+
+Alternative (without LocalDB):
+  Update the connection string in appsettings.json to point to a SQL Server
+  instance, then run: dotnet ef database update
+
+
+--------------------------------------------------------------------------------
+10. RUNNING THE TESTS
+--------------------------------------------------------------------------------
+
+From the solution root:
+  dotnet test
+
+Expected output:
+  Total tests: 41
+       Passed: 41
+  Test Run Successful.
+
+Individual test file:
+  dotnet test --filter "FullyQualifiedName~CurrencyServiceTests"
+  dotnet test --filter "FullyQualifiedName~FileValidationTests"
+  dotnet test --filter "FullyQualifiedName~ContractWorkflowTests"
+  dotnet test --filter "FullyQualifiedName~FactoryPatternTests"
+
+
+--------------------------------------------------------------------------------
+11. SUBMISSION CHECKLIST
+--------------------------------------------------------------------------------
+
+  [x]  ASP.NET Core MVC prototype (GLMS.Web project)
+  [x]  SQL Server database with EF Core Code-First migrations
+  [x]  Three entities: Client, Contract, ServiceRequest
+  [x]  One-to-many relationships with Fluent API configuration
+  [x]  Factory Method pattern implemented (3 factories + resolver)
+  [x]  Observer pattern implemented (2 concrete observers)
+  [x]  Strategy pattern implemented (2 validation strategies)
+  [x]  Status workflow: Expired/OnHold/Draft contracts block service requests
+  [x]  LINQ search/filter on Contracts by title, status, date range
+  [x]  PDF file upload — UUID naming, server storage, download link
+  [x]  File validation — extension check (.pdf only), size limit (10 MB)
+  [x]  External currency API integration (open.er-api.com, async/await)
+  [x]  USD to ZAR conversion persisted with exchange rate audit trail
+  [x]  Real-time ZAR calculator in service request form (JavaScript)
+  [x]  xUnit test project with 41 tests (all passing)
+  [x]  Tests cover: currency math, file validation, workflow rules, factory logic
+  [x]  Edge cases and boundary conditions covered (null, zero, negative, 10 MB)
+  [x]  Database migration scripts present
+  [x]  GitHub repository submission (see video walkthrough)
+
+================================================================================
+End of Part 2 Explanation Document
+================================================================================

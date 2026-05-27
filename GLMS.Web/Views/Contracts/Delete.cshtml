@@ -1,0 +1,37 @@
+@model Contract
+@{
+    ViewData["Title"] = "Delete Contract";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <a asp-action="Index" class="back-btn" title="Back to Contracts">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="page-title">Delete Contract</h1>
+    </div>
+</div>
+
+<div class="danger-card">
+    <div class="danger-card-header">
+        <h6><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deletion</h6>
+    </div>
+    <div style="padding:1.25rem;">
+        <p style="font-size:0.875rem; color:#5a607a; margin-bottom:1rem;">
+            This will permanently delete the contract and all linked service requests. The signed agreement file will also be removed from the server.
+        </p>
+        <dl class="detail-list" style="margin-bottom:1.25rem;">
+            <dt>Title</dt><dd>@Model.Title</dd>
+            <dt>Client</dt><dd>@Model.Client?.Name</dd>
+            <dt>Status</dt><dd><span class="badge-status badge-@Model.Status">@Model.Status</span></dd>
+            <dt>Service Requests</dt><dd>@Model.ServiceRequests.Count linked request(s)</dd>
+        </dl>
+        <form asp-action="Delete" method="post">
+            <input asp-for="Id" type="hidden" />
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-danger-glms">Confirm Delete</button>
+                <a asp-action="Index" class="btn-secondary-glms">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

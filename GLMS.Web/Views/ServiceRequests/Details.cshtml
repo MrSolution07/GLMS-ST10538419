@@ -1,0 +1,55 @@
+@model ServiceRequest
+@{
+    ViewData["Title"] = $"Request #{Model.Id}";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <a asp-action="Index" class="back-btn" title="Back to Service Requests">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="page-title">Service Request #@Model.Id</h1>
+            <p class="page-subtitle">@Model.Contract?.Client?.Name &mdash; @Model.Contract?.Title</p>
+        </div>
+    </div>
+    <span class="badge-status badge-@Model.Status" style="font-size:0.85rem; padding:0.4em 1em;">@Model.Status</span>
+</div>
+
+<div class="glms-card form-section">
+    <div class="glms-card-header">
+        <span class="glms-card-title">Request Details</span>
+    </div>
+    <div class="glms-card-body">
+        <dl class="detail-list">
+            <dt>Contract</dt>
+            <dd>
+                <a asp-controller="Contracts" asp-action="Details" asp-route-id="@Model.ContractId"
+                   class="text-decoration-none" style="color:var(--accent);">
+                    @Model.Contract?.Title
+                </a>
+            </dd>
+            <dt>Client</dt>
+            <dd>@Model.Contract?.Client?.Name</dd>
+            <dt>Description</dt>
+            <dd>@Model.Description</dd>
+            <dt>Amount (USD)</dt>
+            <dd>$@Model.CostUsd.ToString("N2")</dd>
+            <dt>Amount (ZAR)</dt>
+            <dd class="zar-amount" style="font-size:1.05rem;">R @Model.CostZar.ToString("N2")</dd>
+            <dt>Exchange Rate Used</dt>
+            <dd class="text-muted-sm">1 USD = @Model.ExchangeRateUsed.ToString("F4") ZAR</dd>
+            <dt>Status</dt>
+            <dd><span class="badge-status badge-@Model.Status">@Model.Status</span></dd>
+            <dt>Raised On</dt>
+            <dd class="text-muted-sm">@Model.RaisedOn.ToString("dd MMMM yyyy, HH:mm") UTC</dd>
+        </dl>
+        <hr class="divider" />
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn-secondary-glms">Back to List</a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn-danger-glms" style="margin-left:auto;">
+                <i class="bi bi-trash"></i> Delete
+            </a>
+        </div>
+    </div>
+</div>

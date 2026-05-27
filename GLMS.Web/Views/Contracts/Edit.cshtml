@@ -1,0 +1,97 @@
+@model Contract
+@{
+    ViewData["Title"] = "Edit Contract";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <a asp-action="Index" class="back-btn" title="Back to Contracts">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="page-title">Edit Contract</h1>
+            <p class="page-subtitle">@Model.Title</p>
+        </div>
+    </div>
+</div>
+
+<div class="glms-card form-section">
+    <div class="glms-card-header">
+        <span class="glms-card-title">Contract Details</span>
+    </div>
+    <div class="glms-card-body">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            <input asp-for="Id" type="hidden" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert-glms alert-glms-danger">
+                    <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;"></i>
+                    <div>
+                        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@err.ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label class="form-label-glms">Client</label>
+                <select asp-for="ClientId"
+                        asp-items="ViewBag.Clients as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>"
+                        class="form-select-glms"></select>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Title" class="form-label-glms">Contract Title</label>
+                <input asp-for="Title" class="form-control-glms" />
+                <span asp-validation-for="Title" class="field-error"></span>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label asp-for="StartDate" class="form-label-glms">Start Date</label>
+                    <input asp-for="StartDate" type="date" class="form-control-glms" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="EndDate" class="form-label-glms">End Date</label>
+                    <input asp-for="EndDate" type="date" class="form-control-glms" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Status" class="form-label-glms">Status</label>
+                <select asp-for="Status" asp-items="Html.GetEnumSelectList<ContractStatus>()" class="form-select-glms"></select>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ServiceLevel" class="form-label-glms">Service Level</label>
+                <select asp-for="ServiceLevel" asp-items="Html.GetEnumSelectList<ServiceLevel>()" class="form-select-glms"></select>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label-glms">Replace Signed Agreement</label>
+                <input type="file" name="newAgreement" class="form-control-glms" accept=".pdf" />
+                @if (!string.IsNullOrEmpty(Model.SignedAgreementPath))
+                {
+                    <p class="form-hint">Current file: @Model.SignedAgreementFileName (uploading a new file will replace it)</p>
+                }
+                else
+                {
+                    <p class="form-hint">No signed agreement on file. Upload a PDF to attach one.</p>
+                }
+            </div>
+
+            <hr class="divider" />
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-primary-glms">Save Changes</button>
+                <a asp-action="Index" class="btn-secondary-glms">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

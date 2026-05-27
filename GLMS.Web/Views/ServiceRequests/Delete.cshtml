@@ -1,0 +1,39 @@
+@model ServiceRequest
+@{
+    ViewData["Title"] = "Delete Request";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <a asp-action="Index" class="back-btn" title="Back to Service Requests">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="page-title">Delete Service Request</h1>
+    </div>
+</div>
+
+<div class="danger-card">
+    <div class="danger-card-header">
+        <h6><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deletion</h6>
+    </div>
+    <div style="padding:1.25rem;">
+        <p style="font-size:0.875rem; color:#5a607a; margin-bottom:1rem;">
+            This will permanently remove service request #@Model.Id. This action cannot be undone.
+        </p>
+        <dl class="detail-list" style="margin-bottom:1.25rem;">
+            <dt>Contract</dt><dd>@Model.Contract?.Title</dd>
+            <dt>Description</dt><dd>@Model.Description</dd>
+            <dt>Amount</dt>
+            <dd>$@Model.CostUsd.ToString("N2") USD / R @Model.CostZar.ToString("N2") ZAR</dd>
+            <dt>Raised On</dt>
+            <dd class="text-muted-sm">@Model.RaisedOn.ToString("dd MMM yyyy")</dd>
+        </dl>
+        <form asp-action="Delete" method="post">
+            <input asp-for="Id" type="hidden" />
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-danger-glms">Confirm Delete</button>
+                <a asp-action="Index" class="btn-secondary-glms">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

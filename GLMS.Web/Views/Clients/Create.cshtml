@@ -1,0 +1,70 @@
+@model Client
+@{
+    ViewData["Title"] = "New Client";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <a asp-action="Index" class="back-btn" title="Back to Clients">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="page-title">New Client</h1>
+    </div>
+</div>
+
+<div class="glms-card form-section">
+    <div class="glms-card-header">
+        <span class="glms-card-title">Client Details</span>
+    </div>
+    <div class="glms-card-body">
+        <form asp-action="Create" method="post">
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert-glms alert-glms-danger">
+                    <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;"></i>
+                    <div>
+                        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@err.ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label-glms">Client Name</label>
+                <input asp-for="Name" class="form-control-glms" placeholder="e.g. Acme Freight Co." />
+                <span asp-validation-for="Name" class="field-error"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ContactEmail" class="form-label-glms">Contact Email</label>
+                <input asp-for="ContactEmail" class="form-control-glms" type="email" placeholder="contact@company.com" />
+                <span asp-validation-for="ContactEmail" class="field-error"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ContactPhone" class="form-label-glms">Phone (optional)</label>
+                <input asp-for="ContactPhone" class="form-control-glms" placeholder="+27 11 000 0000" />
+                <span asp-validation-for="ContactPhone" class="field-error"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Region" class="form-label-glms">Region</label>
+                <input asp-for="Region" class="form-control-glms" placeholder="e.g. Sub-Saharan Africa" />
+                <span asp-validation-for="Region" class="field-error"></span>
+            </div>
+
+            <hr class="divider" />
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-primary-glms">Save Client</button>
+                <a asp-action="Index" class="btn-secondary-glms">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

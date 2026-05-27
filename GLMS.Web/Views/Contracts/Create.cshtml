@@ -1,0 +1,86 @@
+@model ContractCreateViewModel
+@{
+    ViewData["Title"] = "New Contract";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <a asp-action="Index" class="back-btn" title="Back to Contracts">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="page-title">New Contract</h1>
+    </div>
+</div>
+
+<div class="glms-card form-section">
+    <div class="glms-card-header">
+        <span class="glms-card-title">Contract Details</span>
+    </div>
+    <div class="glms-card-body">
+        <form asp-action="Create" method="post" enctype="multipart/form-data">
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert-glms alert-glms-danger">
+                    <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;"></i>
+                    <div>
+                        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@err.ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="ClientId" class="form-label-glms">Client</label>
+                <select asp-for="ClientId" asp-items="Model.ClientOptions" class="form-select-glms">
+                    <option value="">Select a client</option>
+                </select>
+                <span asp-validation-for="ClientId" class="field-error"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Title" class="form-label-glms">Contract Title</label>
+                <input asp-for="Title" class="form-control-glms" placeholder="e.g. Annual Freight Agreement 2026" />
+                <span asp-validation-for="Title" class="field-error"></span>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label asp-for="StartDate" class="form-label-glms">Start Date</label>
+                    <input asp-for="StartDate" type="date" class="form-control-glms" />
+                    <span asp-validation-for="StartDate" class="field-error"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="EndDate" class="form-label-glms">End Date</label>
+                    <input asp-for="EndDate" type="date" class="form-control-glms" />
+                    <span asp-validation-for="EndDate" class="field-error"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ServiceLevel" class="form-label-glms">Service Level</label>
+                <select asp-for="ServiceLevel" asp-items="Html.GetEnumSelectList<ServiceLevel>()" class="form-select-glms"></select>
+                <p class="form-hint">Standard, Premium, or Enterprise — determines SLA tier and pricing.</p>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="SignedAgreement" class="form-label-glms">Signed Agreement</label>
+                <input asp-for="SignedAgreement" type="file" class="form-control-glms" accept=".pdf" />
+                <p class="form-hint">PDF files only. Maximum file size: 10 MB. Optional at creation — can be uploaded later.</p>
+                <span asp-validation-for="SignedAgreement" class="field-error"></span>
+            </div>
+
+            <hr class="divider" />
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-primary-glms">Create Contract</button>
+                <a asp-action="Index" class="btn-secondary-glms">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

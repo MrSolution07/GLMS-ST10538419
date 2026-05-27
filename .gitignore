@@ -1,0 +1,31 @@
+## .NET build artefacts
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+.vs/
+.idea/
+*.swp
+
+## Published output
+publish/
+out/
+
+## NuGet
+*.nupkg
+packages/
+project.lock.json
+
+## Secrets — never commit
+appsettings.Secrets.json
+secrets.json
+*.pfx
+*.p12
+
+## OS artefacts
+.DS_Store
+Thumbs.db
+
+## Uploaded files (user data, not source code)
+GLMS.Web/wwwroot/uploads/*.pdf

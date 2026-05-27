@@ -1,0 +1,72 @@
+@model IEnumerable<ServiceRequest>
+@{
+    ViewData["Title"] = "Service Requests";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">Service Requests</h1>
+    </div>
+    <a asp-action="Create" class="btn-primary-glms">
+        <i class="bi bi-plus-lg"></i> Raise Request
+    </a>
+</div>
+
+<div class="glms-card">
+    <div class="glms-card-body" style="padding:0;">
+        <table class="glms-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Contract</th>
+                    <th>Client</th>
+                    <th>USD Amount</th>
+                    <th>ZAR Amount</th>
+                    <th>Rate Used</th>
+                    <th>Status</th>
+                    <th>Raised</th>
+                    <th class="td-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var sr in Model)
+                {
+                    <tr>
+                        <td class="fw-table-primary">@sr.Description</td>
+                        <td>
+                            <a asp-controller="Contracts" asp-action="Details" asp-route-id="@sr.ContractId"
+                               class="text-decoration-none" style="color:var(--accent);">
+                                @sr.Contract?.Title
+                            </a>
+                        </td>
+                        <td class="text-muted-sm">@sr.Contract?.Client?.Name</td>
+                        <td class="text-muted-sm">$@sr.CostUsd.ToString("N2")</td>
+                        <td class="zar-amount">R @sr.CostZar.ToString("N2")</td>
+                        <td class="text-muted-sm">@sr.ExchangeRateUsed.ToString("F4")</td>
+                        <td><span class="badge-status badge-@sr.Status">@sr.Status</span></td>
+                        <td class="text-muted-sm">@sr.RaisedOn.ToString("dd MMM yyyy")</td>
+                        <td class="td-actions">
+                            <a asp-action="Details" asp-route-id="@sr.Id" class="btn-icon" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@sr.Id" class="btn-icon btn-icon-danger ms-1" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="bi bi-clipboard-x"></i></div>
+                                <div>No service requests have been raised yet.</div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

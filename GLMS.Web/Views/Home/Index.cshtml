@@ -1,0 +1,117 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+    var recentContracts = ViewBag.RecentContracts as IEnumerable<Contract> ?? Enumerable.Empty<Contract>();
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <div>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Global Logistics Management System — TechMove</p>
+        </div>
+    </div>
+</div>
+
+<!-- KPI cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-blue">
+                <i class="bi bi-people"></i>
+            </div>
+            <div>
+                <div class="stat-value">@ViewBag.TotalClients</div>
+                <div class="stat-label">Total Clients</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-green">
+                <i class="bi bi-file-earmark-check"></i>
+            </div>
+            <div>
+                <div class="stat-value">@ViewBag.ActiveContracts</div>
+                <div class="stat-label">Active Contracts</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-amber">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div>
+                <div class="stat-value">@ViewBag.TotalContracts</div>
+                <div class="stat-label">Total Contracts</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-red">
+                <i class="bi bi-clipboard-check"></i>
+            </div>
+            <div>
+                <div class="stat-value">@ViewBag.PendingRequests</div>
+                <div class="stat-label">Pending Requests</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent contracts table -->
+<div class="glms-card">
+    <div class="glms-card-header">
+        <span class="glms-card-title">Recent Contracts</span>
+        <a asp-controller="Contracts" asp-action="Index" class="btn-secondary-glms" style="font-size:0.78rem; padding:0.3rem 0.75rem;">
+            View all
+        </a>
+    </div>
+    <div class="glms-card-body" style="padding:0;">
+        <table class="glms-table">
+            <thead>
+                <tr>
+                    <th>Contract Title</th>
+                    <th>Client</th>
+                    <th>Service Level</th>
+                    <th>Status</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in recentContracts)
+                {
+                    <tr>
+                        <td>
+                            <a asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id"
+                               class="fw-table-primary text-decoration-none" style="color:var(--accent);">
+                                @c.Title
+                            </a>
+                        </td>
+                        <td>@c.Client?.Name</td>
+                        <td><span class="badge-level badge-@c.ServiceLevel">@c.ServiceLevel</span></td>
+                        <td><span class="badge-status badge-@c.Status">@c.Status</span></td>
+                        <td class="text-muted-sm">@c.StartDate.ToString("dd MMM yyyy")</td>
+                        <td class="text-muted-sm">@c.EndDate.ToString("dd MMM yyyy")</td>
+                    </tr>
+                }
+                @if (!recentContracts.Any())
+                {
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="bi bi-file-earmark-x"></i></div>
+                                <div>No contracts have been created yet.</div>
+                                <a asp-controller="Contracts" asp-action="Create" class="btn-primary-glms mt-2" style="display:inline-flex;">
+                                    Create First Contract
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,125 @@
+@model ServiceRequestCreateViewModel
+@{
+    ViewData["Title"] = "Raise Service Request";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <a asp-action="Index" class="back-btn" title="Back to Service Requests">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="page-title">Raise Service Request</h1>
+            <p class="page-subtitle">Create a new service request linked to an active contract</p>
+        </div>
+    </div>
+</div>
+
+<div class="glms-card form-section">
+    <div class="glms-card-header">
+        <span class="glms-card-title">Request Details</span>
+    </div>
+    <div class="glms-card-body">
+
+        <div class="alert-glms alert-glms-info mb-4">
+            <i class="bi bi-info-circle-fill" style="flex-shrink:0;"></i>
+            <span>Service requests can only be raised against contracts with <strong>Active</strong> status. The USD amount will be converted to ZAR automatically using the live exchange rate.</span>
+        </div>
+
+        <form asp-action="Create" method="post" id="requestForm">
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert-glms alert-glms-danger">
+                    <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;"></i>
+                    <div>
+                        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@err.ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="ContractId" class="form-label-glms">Contract</label>
+                <select asp-for="ContractId" asp-items="Model.ContractOptions" class="form-select-glms">
+                    <option value="">Select an active contract</option>
+                </select>
+                <span asp-validation-for="ContractId" class="field-error"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label-glms">Description</label>
+                <textarea asp-for="Description" class="form-control-glms" rows="3"
+                          placeholder="Describe the logistics service being requested..." style="resize:vertical;"></textarea>
+                <span asp-validation-for="Description" class="field-error"></span>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label asp-for="CostUsd" class="form-label-glms">Amount (USD)</label>
+                    <div class="input-prefix">
+                        <span class="input-prefix-label">$</span>
+                        <input asp-for="CostUsd" type="number" step="0.01" min="0.01"
+                               class="form-control-glms" id="usdInput" placeholder="0.00" />
+                    </div>
+                    <span asp-validation-for="CostUsd" class="field-error"></span>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label-glms">Equivalent (ZAR)</label>
+                    <div class="input-prefix">
+                        <span class="input-prefix-label">R</span>
+                        <input type="text" id="zarDisplay" class="form-control-glms"
+                               readonly placeholder="Auto-calculated" style="background:#f7f8fc;" />
+                    </div>
+                    <input asp-for="CostZar" type="hidden" id="zarHidden" />
+                    <input asp-for="ExchangeRate" type="hidden" id="rateHidden" />
+                </div>
+            </div>
+
+            <div class="currency-widget mb-4">
+                <span class="currency-rate-label">Live Exchange Rate: </span>
+                <span class="currency-rate-value" id="rateDisplay">
+                    1 USD = @Model.ExchangeRate.ToString("F4") ZAR
+                </span>
+                <span class="text-muted-sm ms-2">(sourced from ExchangeRate-API at page load)</span>
+            </div>
+
+            <hr class="divider" />
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-primary-glms">Submit Request</button>
+                <a asp-action="Index" class="btn-secondary-glms">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        (function () {
+            var rate     = parseFloat('@Model.ExchangeRate.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)') || 18.50;
+            var usdInput = document.getElementById('usdInput');
+            var zarDisp  = document.getElementById('zarDisplay');
+            var zarHid   = document.getElementById('zarHidden');
+
+            document.getElementById('rateHidden').value = rate.toFixed(4);
+
+            function recalculate() {
+                var usd = parseFloat(usdInput.value);
+                if (!isNaN(usd) && usd > 0) {
+                    var zar = (usd * rate).toFixed(2);
+                    zarDisp.value = parseFloat(zar).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    zarHid.value  = zar;
+                } else {
+                    zarDisp.value = '';
+                    zarHid.value  = '0';
+                }
+            }
+
+            usdInput.addEventListener('input', recalculate);
+            if (usdInput.value) recalculate();
+        })();
+    </script>
+}

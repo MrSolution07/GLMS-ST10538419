@@ -1,0 +1,70 @@
+@model IEnumerable<Client>
+@{
+    ViewData["Title"] = "Clients";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">Clients</h1>
+    </div>
+    <a asp-action="Create" class="btn-primary-glms">
+        <i class="bi bi-plus-lg"></i> New Client
+    </a>
+</div>
+
+<div class="glms-card">
+    <div class="glms-card-body" style="padding:0;">
+        <table class="glms-table">
+            <thead>
+                <tr>
+                    <th>Client Name</th>
+                    <th>Contact Email</th>
+                    <th>Phone</th>
+                    <th>Region</th>
+                    <th>Contracts</th>
+                    <th>Registered</th>
+                    <th class="td-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var client in Model)
+                {
+                    <tr>
+                        <td class="fw-table-primary">@client.Name</td>
+                        <td>@client.ContactEmail</td>
+                        <td class="text-muted-sm">@(client.ContactPhone ?? "—")</td>
+                        <td>@client.Region</td>
+                        <td>
+                            <span class="badge-status badge-Active" style="background:#f0f1f5; color:#5a607a;">
+                                @client.Contracts.Count
+                            </span>
+                        </td>
+                        <td class="text-muted-sm">@client.RegisteredOn.ToString("dd MMM yyyy")</td>
+                        <td class="td-actions">
+                            <a asp-action="Details" asp-route-id="@client.Id" class="btn-icon" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@client.Id" class="btn-icon ms-1" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@client.Id" class="btn-icon btn-icon-danger ms-1" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="bi bi-people"></i></div>
+                                <div>No clients have been added yet.</div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

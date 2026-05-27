@@ -1,0 +1,104 @@
+@model ContractSearchViewModel
+@{
+    ViewData["Title"] = "Contracts";
+}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 class="page-title">Contracts</h1>
+    </div>
+    <a asp-action="Create" class="btn-primary-glms">
+        <i class="bi bi-plus-lg"></i> New Contract
+    </a>
+</div>
+
+<!-- Filter panel -->
+<div class="filter-panel">
+    <div class="filter-panel-title">Search and Filter</div>
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label-glms">Contract Title</label>
+                <input asp-for="TitleKeyword" class="form-control-glms" placeholder="Search by title..." />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label-glms">Status</label>
+                <select asp-for="Status" asp-items="Html.GetEnumSelectList<ContractStatus>()" class="form-select-glms">
+                    <option value="">All statuses</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label-glms">Start Date From</label>
+                <input asp-for="StartDateFrom" type="date" class="form-control-glms" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label-glms">Start Date To</label>
+                <input asp-for="StartDateTo" type="date" class="form-control-glms" />
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn-primary-glms flex-grow-1">Search</button>
+                <a asp-action="Index" class="btn-secondary-glms">Clear</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="glms-card">
+    <div class="glms-card-body" style="padding:0;">
+        <table class="glms-table">
+            <thead>
+                <tr>
+                    <th>Contract Title</th>
+                    <th>Client</th>
+                    <th>Service Level</th>
+                    <th>Status</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Requests</th>
+                    <th class="td-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model.Results)
+                {
+                    <tr>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@c.Id"
+                               class="fw-table-primary text-decoration-none" style="color:var(--accent);">
+                                @c.Title
+                            </a>
+                        </td>
+                        <td>@c.Client?.Name</td>
+                        <td><span class="badge-level badge-@c.ServiceLevel">@c.ServiceLevel</span></td>
+                        <td><span class="badge-status badge-@c.Status">@c.Status</span></td>
+                        <td class="text-muted-sm">@c.StartDate.ToString("dd MMM yyyy")</td>
+                        <td class="text-muted-sm">@c.EndDate.ToString("dd MMM yyyy")</td>
+                        <td class="text-muted-sm">@c.ServiceRequests.Count</td>
+                        <td class="td-actions">
+                            <a asp-action="Details" asp-route-id="@c.Id" class="btn-icon" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@c.Id" class="btn-icon ms-1" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@c.Id" class="btn-icon btn-icon-danger ms-1" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Results.Any())
+                {
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="bi bi-file-earmark-x"></i></div>
+                                <div>No contracts match the current search criteria.</div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
