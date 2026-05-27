@@ -73,8 +73,6 @@
                         <input type="text" id="zarDisplay" class="form-control-glms"
                                readonly placeholder="Auto-calculated" style="background:#f7f8fc;" />
                     </div>
-                    <input asp-for="CostZar" type="hidden" id="zarHidden" />
-                    <input asp-for="ExchangeRate" type="hidden" id="rateHidden" />
                 </div>
             </div>
 
@@ -83,7 +81,7 @@
                 <span class="currency-rate-value" id="rateDisplay">
                     1 USD = @Model.ExchangeRate.ToString("F4") ZAR
                 </span>
-                <span class="text-muted-sm ms-2">(sourced from ExchangeRate-API at page load)</span>
+                <span class="text-muted-sm ms-2"></span>
             </div>
 
             <hr class="divider" />
@@ -102,19 +100,14 @@
             var rate     = parseFloat('@Model.ExchangeRate.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)') || 18.50;
             var usdInput = document.getElementById('usdInput');
             var zarDisp  = document.getElementById('zarDisplay');
-            var zarHid   = document.getElementById('zarHidden');
-
-            document.getElementById('rateHidden').value = rate.toFixed(4);
 
             function recalculate() {
                 var usd = parseFloat(usdInput.value);
                 if (!isNaN(usd) && usd > 0) {
                     var zar = (usd * rate).toFixed(2);
                     zarDisp.value = parseFloat(zar).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    zarHid.value  = zar;
                 } else {
                     zarDisp.value = '';
-                    zarHid.value  = '0';
                 }
             }
 
